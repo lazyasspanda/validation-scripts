@@ -8,8 +8,8 @@
 // @match        https://*.lightning.force.com/*
 // @grant        GM_xmlhttpRequest
 // @icon         https://www.google.com/s2/favicons?domain=salesforce.com
-// @updateURL    https://raw.githubusercontent.com/lazyasspanda/validation-scripts/main/Salesforce%20Case%20Validation%20Checklist.user.js
-// @downloadURL  https://raw.githubusercontent.com/lazyasspanda/validation-scripts/main/Salesforce%20Case%20Validation%20Checklist.user.js
+// @updateURL    https://github.com/lazyasspanda/validation-scripts/raw/refs/heads/main/Salesforce%20Case%20Validation%20Checklist.user.js
+// @downloadURL  https://github.com/lazyasspanda/validation-scripts/raw/refs/heads/main/Salesforce%20Case%20Validation%20Checklist.user.js
 // @run-at       document-start
 // ==/UserScript==
 
