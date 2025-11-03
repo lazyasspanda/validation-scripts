@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Salesforce Case Validation Checklist
 // @namespace    http://tampermonkey.net/
-// @version      7.1
+// @version      7.2
 // @description  Cloud-integrated validation checklist with manager dashboard
 // @author       Pratik Chabria
 // @match        https://dealeron.lightning.force.com/*
