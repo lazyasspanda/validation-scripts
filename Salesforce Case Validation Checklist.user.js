@@ -55,7 +55,7 @@
                 ">
                     <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
                         <div style="font-size: 24px;">🚀</div>
-                        <div style="font-weight: 800; font-size: 15px;">Update Available</div>
+                        <div style="font-weight: 800; font-size: 15px;">Update Available for Validation Script</div>
                     </div>
                     <div style="font-size: 13px; margin-bottom: 12px; line-height: 1.5;">
                         New version <strong style="color: #fb741c;">${latestVersion}</strong> is available!<br>
