@@ -510,7 +510,7 @@
         document.getElementById('tabRecords').addEventListener('click', () => switchTab('records', colors));
                  // Check for Updates button handler
         document.getElementById('checkUpdatesBtn').addEventListener('click', () => {
-            const currentVersion = '7.4'; // Make sure this matches @version at top
+            const currentVersion = '1.6'; // Make sure this matches @version at top
             const downloadUrl = 'https://raw.githubusercontent.com/lazyasspanda/validation-scripts/main/Salesforce%20Case%20Validation%20Checklist.user.js';
             const checkUpdateBtn = document.getElementById('checkUpdatesBtn');
             
