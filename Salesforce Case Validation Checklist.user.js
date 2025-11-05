@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Salesforce Case Validation Checklist
 // @namespace    http://tampermonkey.net/
-// @version      1.6
+// @version      1.5
 // @description  Cloud-integrated validation checklist with manager dashboard
 // @author       Pratik Chabria
 // @match        https://dealeron.lightning.force.com/*
@@ -21,7 +21,7 @@
 // ==/UserScript==
 
 (function checkForScriptUpdates() {
-    const currentVersion = '1.6';
+    const currentVersion = '1.5';
     const versionUrl = 'https://raw.githubusercontent.com/lazyasspanda/validation-scripts/main/Salesforce%20Case%20Validation%20Checklist.user.js';
     const downloadUrl = versionUrl;
     const CHECK_INTERVAL = 24 * 60 * 60 * 1000; // Check every 24 hours (1 day)
@@ -508,79 +508,85 @@
         document.getElementById('closeDrawer').addEventListener('click', toggleDrawer);
         document.getElementById('tabChecklist').addEventListener('click', () => switchTab('checklist', colors));
         document.getElementById('tabRecords').addEventListener('click', () => switchTab('records', colors));
-                 // Check for Updates button handler
-        document.getElementById('checkUpdatesBtn').addEventListener('click', () => {
-            const currentVersion = '1.6'; // Make sure this matches @version at top
-            const downloadUrl = 'https://raw.githubusercontent.com/lazyasspanda/validation-scripts/main/Salesforce%20Case%20Validation%20Checklist.user.js';
-            const checkUpdateBtn = document.getElementById('checkUpdatesBtn');
+        // Check for Updates button handler
+document.getElementById('checkUpdatesBtn').addEventListener('click', () => {
+    const currentVersion = '1.6'; // Match @version at top
+    const downloadUrl = 'https://raw.githubusercontent.com/lazyasspanda/validation-scripts/main/Salesforce%20Case%20Validation%20Checklist.user.js';
+    const checkUpdateBtn = document.getElementById('checkUpdatesBtn');
+    
+    // If button is in "Update Available" state and user clicks, open the link
+    if (checkUpdateBtn.getAttribute('data-update-ready') === 'true') {
+        console.log('[Update] Opening update link');
+        window.open(downloadUrl, '_blank');
+        return;
+    }
+    
+    console.log('[Update] Manual check triggered by user');
+    checkUpdateBtn.style.opacity = '0.6';
+    checkUpdateBtn.innerHTML = '⟳ Checking...';
+    
+    GM_xmlhttpRequest({
+        method: 'GET',
+        url: downloadUrl + '?t=' + Date.now(),
+        onload: function (response) {
+            checkUpdateBtn.style.opacity = '1';
             
-            console.log('[Update] Manual check triggered by user');
-            checkUpdateBtn.style.opacity = '0.6';
-            checkUpdateBtn.innerHTML = '⟳ Checking...';
-            
-            GM_xmlhttpRequest({
-                method: 'GET',
-                url: downloadUrl + '?t=' + Date.now(),
-                onload: function (response) {
-                    checkUpdateBtn.style.opacity = '1';
+            if (response.status === 200) {
+                const match = response.responseText.match(/@version\s+([0-9.]+)/);
+                const latestVersion = match ? match[1] : null;
+                
+                console.log('[Update] Current: ' + currentVersion + ', GitHub: ' + latestVersion);
+                
+                if (latestVersion && latestVersion !== currentVersion) {
+                    // UPDATE AVAILABLE
+                    console.log(`[Update] ✓ New version ${latestVersion} available!`);
+                    checkUpdateBtn.innerHTML = '✓ Update Available: v' + latestVersion;
+                    checkUpdateBtn.style.background = '#2ecc71';
+                    checkUpdateBtn.style.cursor = 'pointer';
+                    checkUpdateBtn.setAttribute('data-update-ready', 'true');
                     
-                    if (response.status === 200) {
-                        const match = response.responseText.match(/@version\s+([0-9.]+)/);
-                        const latestVersion = match ? match[1] : null;
-                        
-                        console.log('[Update] Current: ' + currentVersion + ', GitHub: ' + latestVersion);
-                        
-                        if (latestVersion && latestVersion !== currentVersion) {
-                            // UPDATE AVAILABLE
-                            console.log(`[Update] ✓ New version ${latestVersion} available!`);
-                            checkUpdateBtn.innerHTML = '✓ Update Available: v' + latestVersion;
-                            checkUpdateBtn.style.background = '#2ecc71';
-                            checkUpdateBtn.style.cursor = 'pointer';
-                            
-                            // Make button clickable to open update link
-                            checkUpdateBtn.onclick = () => {
-                                window.open(downloadUrl, '_blank');
-                            };
-                            
-                            alert(`[✓] Update Available!\n\nCurrent: v${currentVersion}\nLatest: v${latestVersion}\n\nClick the button again to open the update link.`);
-                        } else {
-                            // NO UPDATE NEEDED
-                            console.log(`[Update] ✓ Already up to date (v${currentVersion})`);
-                            checkUpdateBtn.innerHTML = '✓ No Updates Available';
-                            checkUpdateBtn.style.background = '#27ae60';
-                            checkUpdateBtn.style.cursor = 'default';
-                            checkUpdateBtn.onclick = null;
-                            
-                            alert(`[✓] You're up to date!\n\nVersion: v${currentVersion}`);
-                            
-                            // Reset after 3 seconds
-                            setTimeout(() => {
-                                checkUpdateBtn.innerHTML = '⟳ Check for Updates';
-                                checkUpdateBtn.style.background = '#fb741c';
-                                checkUpdateBtn.style.cursor = 'pointer';
-                                checkUpdateBtn.onclick = null;
-                            }, 3000);
-                        }
-                    } else {
-                        throw new Error('HTTP ' + response.status);
-                    }
-                },
-                onerror: function (err) {
-                    checkUpdateBtn.style.opacity = '1';
-                    console.log('[Update] Check failed:', err);
-                    checkUpdateBtn.innerHTML = '✗ Check Failed';
-                    checkUpdateBtn.style.background = '#e74c3c';
+                    alert(`[✓] Update Available!\n\nCurrent: v${currentVersion}\nLatest: v${latestVersion}\n\nClick the button to open the update link.`);
+                } else {
+                    // NO UPDATE NEEDED
+                    console.log(`[Update] ✓ Already up to date (v${currentVersion})`);
+                    checkUpdateBtn.innerHTML = '✓ No Updates Available';
+                    checkUpdateBtn.style.background = '#27ae60';
+                    checkUpdateBtn.style.cursor = 'default';
+                    checkUpdateBtn.setAttribute('data-update-ready', 'false');
                     
-                    alert('[✗] Update check failed!\n\nPlease try again later.');
+                    alert(`[✓] You're up to date!\n\nVersion: v${currentVersion}`);
                     
                     // Reset after 3 seconds
                     setTimeout(() => {
                         checkUpdateBtn.innerHTML = '⟳ Check for Updates';
                         checkUpdateBtn.style.background = '#fb741c';
+                        checkUpdateBtn.style.cursor = 'pointer';
+                        checkUpdateBtn.removeAttribute('data-update-ready');
                     }, 3000);
                 }
-            });
-        });
+            } else {
+                throw new Error('HTTP ' + response.status);
+            }
+        },
+        onerror: function (err) {
+            checkUpdateBtn.style.opacity = '1';
+            console.log('[Update] Check failed:', err);
+            checkUpdateBtn.innerHTML = '✗ Check Failed';
+            checkUpdateBtn.style.background = '#e74c3c';
+            checkUpdateBtn.setAttribute('data-update-ready', 'false');
+            
+            alert('[✗] Update check failed!\n\nPlease try again later.');
+            
+            // Reset after 3 seconds
+            setTimeout(() => {
+                checkUpdateBtn.innerHTML = '⟳ Check for Updates';
+                checkUpdateBtn.style.background = '#fb741c';
+                checkUpdateBtn.removeAttribute('data-update-ready');
+            }, 3000);
+        }
+    });
+});
+
 
 
 
