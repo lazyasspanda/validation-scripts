@@ -24,7 +24,7 @@
     const currentVersion = '1.3';
     const versionUrl = 'https://raw.githubusercontent.com/lazyasspanda/validation-scripts/main/Salesforce%20Case%20Validation%20Checklist.user.js';
     const downloadUrl = versionUrl;
-    const CHECK_INTERVAL = 30 * 1000; // Check every 30 seconds
+    const CHECK_INTERVAL = 24 * 60 * 60 * 1000; // Check every 24 hours (1 day)
     const SUPPRESS_AFTER_UPDATE_MS = 10 * 60 * 1000; // Suppress for 10 minutes after clicking Update
 
     function showUpdatePopup(latestVersion) {
