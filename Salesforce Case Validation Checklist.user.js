@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Salesforce Case Validation Checklist
 // @namespace    http://tampermonkey.net/
-// @version      7.1
+// @version      7.2
 // @description  Cloud-integrated validation checklist with manager dashboard
 // @author       Pratik Chabria
 // @match        https://dealeron.lightning.force.com/*
@@ -20,7 +20,7 @@
 // ==/UserScript==
 
 (async () => {
-  const currentVersion = '7.1';
+  const currentVersion = '7.2';
   const versionUrl = 'https://raw.githubusercontent.com/pratikchabria/salesforce-case-validation/main/Salesforce-Case-Validation-Checklist.user.js';
 
   try {
