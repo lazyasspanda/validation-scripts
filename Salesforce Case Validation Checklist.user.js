@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Salesforce Case Validation Checklist
 // @namespace    http://tampermonkey.net/
-// @version      7.2
+// @version      7.1
 // @description  Cloud-integrated validation checklist with manager dashboard
 // @author       Pratik Chabria
 // @match        https://dealeron.lightning.force.com/*
@@ -11,15 +11,31 @@
 // @grant        GM_notification
 // @grant        GM_xmlhttpRequest
 // @grant        GM_openInTab
-// @updateURL    https://github.com/lazyasspanda/validation-scripts/raw/refs/heads/main/Salesforce%20Case%20Validation%20Checklist.user.js
-// @downloadURL  https://github.com/lazyasspanda/validation-scripts/raw/refs/heads/main/Salesforce%20Case%20Validation%20Checklist.user.js
+// @updateURL    https://raw.githubusercontent.com/lazyasspanda/validation-scripts/raw/refs/heads/main/Salesforce%20Case%20Validation%20Checklist.user.js
+// @downloadURL  https://raw.githubusercontent.com/lazyasspanda/validation-scripts/raw/refs/heads/main/Salesforce%20Case%20Validation%20Checklist.user.js
+// @homepageURL  https://github.com/lazyasspanda/validation-scripts
 // @require      https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js
 // @icon         https://www.google.com/s2/favicons?domain=salesforce.com
 // @run-at       document-start
 // ==/UserScript==
 
+(async () => {
+  const currentVersion = '7.1';
+  const versionUrl = 'https://raw.githubusercontent.com/pratikchabria/salesforce-case-validation/main/Salesforce-Case-Validation-Checklist.user.js';
 
+  try {
+    const response = await fetch(versionUrl);
+    const text = await response.text();
+    const match = text.match(/@version\s+([0-9.]+)/);
+    const latestVersion = match ? match[1] : null;
 
+    if (latestVersion && latestVersion !== currentVersion) {
+      alert(`🚀 A new version (${latestVersion}) of the Validation Checklist is available! Please update from Tampermonkey.`);
+    }
+  } catch (err) {
+    console.log('Update check failed:', err);
+  }
+})();
 
 (function() {
     'use strict';
