@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Salesforce Case Validation Checklist
 // @namespace    http://tampermonkey.net/
-// @version      1.4
+// @version      1.5
 // @description  Cloud-integrated validation checklist with manager dashboard
 // @author       Pratik Chabria
 // @match        https://dealeron.lightning.force.com/*
@@ -21,7 +21,7 @@
 // ==/UserScript==
 
 (function checkForScriptUpdates() {
-    const currentVersion = '1.4';
+    const currentVersion = '1.5';
     const versionUrl = 'https://raw.githubusercontent.com/lazyasspanda/validation-scripts/main/Salesforce%20Case%20Validation%20Checklist.user.js';
     const downloadUrl = versionUrl;
     const CHECK_INTERVAL = 24 * 60 * 60 * 1000; // Check every 24 hours (1 day)
@@ -265,7 +265,24 @@
             <button id="closeDrawer" style="position: absolute; top: 8px; right: 12px; background: ${colors.white}; border: none; width: 28px; height: 28px; border-radius: 50%; font-size: 18px; cursor: pointer; color: ${colors.brand}; font-weight: bold; transition: all 0.3s ease; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2); display: flex; align-items: center; justify-content: center; z-index: 10;">&#10005;</button>
             <div style="text-align: center; margin-bottom: 12px;">        
                 <h2 style="margin: 0 0 3px 0; font-size: 18px; font-weight: 800; color: ${colors.white}; letter-spacing: -0.3px;">Validation Hub</h2>
-                <p style="margin: 0; font-size: 11px; color: rgba(255,255,255,0.9); font-weight: 500;">Cloud Enabled v7.4</p>
+                <div style="margin: 0; font-size: 11px; color: rgba(255,255,255,0.9); font-weight: 500;">
+    Cloud Enabled v7.4
+    <button id="checkUpdatesBtn" style="
+        display: block;
+        width: 100%;
+        margin-top: 6px;
+        padding: 6px 12px;
+        background: #fb741c;
+        border: none;
+        color: white;
+        border-radius: 5px;
+        font-size: 11px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    ">⟳ Check for Updates</button>
+</div>
+
             </div>
             <div style="display: flex; gap: 0; background: ${colors.brandDark}; border-radius: 6px 6px 0 0; overflow: hidden;">
                 <button id="tabChecklist" class="tab-btn" style="flex: 1; padding: 12px; background: ${colors.white}; border: none; color: ${colors.brand}; font-weight: 700; font-size: 12px; cursor: pointer; transition: all 0.3s ease;">Checklist</button>
@@ -491,6 +508,54 @@
         document.getElementById('closeDrawer').addEventListener('click', toggleDrawer);
         document.getElementById('tabChecklist').addEventListener('click', () => switchTab('checklist', colors));
         document.getElementById('tabRecords').addEventListener('click', () => switchTab('records', colors));
+                // Check for Updates button handler
+        document.getElementById('checkUpdatesBtn').addEventListener('click', () => {
+            console.log('[Update] Manual update check triggered');
+            const checkUpdateBtn = document.getElementById('checkUpdatesBtn');
+            checkUpdateBtn.style.opacity = '0.6';
+            checkUpdateBtn.innerHTML = '⟳ Checking...';
+            
+            // Call the update check manually
+            setTimeout(() => {
+                GM_xmlhttpRequest({
+                    method: 'GET',
+                    url: 'https://raw.githubusercontent.com/lazyasspanda/validation-scripts/main/Salesforce%20Case%20Validation%20Checklist.user.js?t=' + Date.now(),
+                    onload: function (response) {
+                        checkUpdateBtn.style.opacity = '1';
+                        if (response.status === 200) {
+                            const match = response.responseText.match(/@version\s+([0-9.]+)/);
+                            const latestVersion = match ? match[1] : null;
+                            const currentVersion = '7.4';
+                            
+                            if (latestVersion && latestVersion !== currentVersion) {
+                                console.log(`[Update] New version ${latestVersion} found!`);
+                                checkUpdateBtn.innerHTML = '✓ Update Available!';
+                                checkUpdateBtn.style.background = '#2ecc71';
+                                alert(`Update available: ${latestVersion}\n\nClick the link to install.`);
+                            } else {
+                                console.log('[Update] Already up to date');
+                                checkUpdateBtn.innerHTML = '✓ Up to Date';
+                                checkUpdateBtn.style.background = '#27ae60';
+                                setTimeout(() => {
+                                    checkUpdateBtn.innerHTML = '⟳ Check for Updates';
+                                    checkUpdateBtn.style.background = '#fb741c';
+                                }, 2000);
+                            }
+                        }
+                    },
+                    onerror: function () {
+                        checkUpdateBtn.style.opacity = '1';
+                        checkUpdateBtn.innerHTML = '✗ Check Failed';
+                        checkUpdateBtn.style.background = '#e74c3c';
+                        setTimeout(() => {
+                            checkUpdateBtn.innerHTML = '⟳ Check for Updates';
+                            checkUpdateBtn.style.background = '#fb741c';
+                        }, 2000);
+                    }
+                });
+            }, 500);
+        });
+
 
         const employeeNameInput = document.getElementById('employeeNameInput');
         const caseNumberInput = document.getElementById('caseNumberInput');
@@ -577,75 +642,84 @@
         const form = document.getElementById('validationForm');
         const submitBtn = document.getElementById('submitBtn');
 
-        if (form) {
-            form.addEventListener('submit', async (e) => {
-                e.preventDefault();
+       if (form) {
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
 
-                const employeeName = employeeNameInput.value.trim();
-                const caseNumber = caseNumberInput.value.trim();
+        const employeeName = employeeNameInput.value.trim();
+        const caseNumber = caseNumberInput.value.trim();
 
-                if (!employeeName || !caseNumber) {
-                    alert('[!] Please enter both name and case number!');
-                    return;
-                }
-
-                const basicSelected = document.querySelector('.yes-no-btn[data-group="basicValidation"][data-selected]');
-                const caseTypeSelected = document.querySelector('.case-type-radio:checked');
-                const detailedSelected = document.querySelector('.yes-no-btn[data-group="detailedValidation"][data-selected]');
-
-                if (!basicSelected || !caseTypeSelected || !detailedSelected) {
-                    alert('Please answer all questions!');
-                    return;
-                }
-
-                const timestamp = new Date().toISOString();
-                const recordNumber = getAllRecords().length + 1;
-
-                const formData = {
-                    employeeName: employeeName,
-                    caseNumber: caseNumber,
-                    timestamp: timestamp,
-                    readableTime: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
-                    basicValidation: 'Yes',
-                    caseTypeVerification: caseTypeSelected.value.toUpperCase(),
-                    detailedValidation: 'Yes',
-                    recordNumber: recordNumber,
-                    validator: 'User',
-                    verificationHash: 'HASH_' + Date.now()
-                };
-
-                try {
-                    const records = getAllRecords();
-                    records.push(formData);
-                    localStorage.setItem('validationRecords', JSON.stringify(records));
-                    console.log('[+] Record saved locally:', recordNumber);
-                } catch (err) {
-                    console.log('[!] Error saving to localStorage:', err);
-                }
-
-                await syncToCloud(formData);
-
-                createConfetti(colors);
-                alert(`[+] Record #${recordNumber} saved!\n\n[*] Cloud synced\n[*] Check Records`);
-
-                form.reset();
-                document.querySelectorAll('.yes-no-btn').forEach(btn => {
-                    btn.style.background = colors.white;
-                    btn.style.borderColor = colors.neutral3;
-                    btn.style.color = colors.neutral7;
-                    btn.style.transform = 'scale(1)';
-                    btn.removeAttribute('data-selected');
-                });
-                document.querySelectorAll('.case-type-radio').forEach(radio => {
-                    const label = radio.closest('label');
-                    label.style.borderColor = colors.neutral3;
-                    label.style.background = colors.white;
-                });
-
-                updateStats(colors);
-                switchTab('records', colors);
-                setTimeout(() => toggleDrawer(), 1000);
-            });
+        if (!employeeName || !caseNumber) {
+            alert('[!] Please enter both name and case number!');
+            return;
         }
+
+        const basicSelected = document.querySelector('.yes-no-btn[data-group="basicValidation"][data-selected]');
+        const caseTypeSelected = document.querySelector('.case-type-radio:checked');
+        const detailedSelected = document.querySelector('.yes-no-btn[data-group="detailedValidation"][data-selected]');
+
+        if (!basicSelected || !caseTypeSelected || !detailedSelected) {
+            alert('Please answer all questions!');
+            return;
+        }
+
+        const timestamp = new Date().toISOString();
+        const recordNumber = getAllRecords().length + 1;
+
+        const formData = {
+            employeeName: employeeName,
+            caseNumber: caseNumber,
+            timestamp: timestamp,
+            readableTime: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
+            basicValidation: 'Yes',
+            caseTypeVerification: caseTypeSelected.value.toUpperCase(),
+            detailedValidation: 'Yes',
+            recordNumber: recordNumber,
+            validator: 'User',
+            verificationHash: 'HASH_' + Date.now()
+        };
+
+        // Save locally FIRST (instant)
+        try {
+            const records = getAllRecords();
+            records.push(formData);
+            localStorage.setItem('validationRecords', JSON.stringify(records));
+            console.log('[+] Record saved locally:', recordNumber);
+        } catch (err) {
+            console.log('[!] Error saving to localStorage:', err);
+        }
+
+        // Show immediate feedback
+        createConfetti(colors);
+        alert(`[+] Record #${recordNumber} saved!\n\n[*] Syncing to cloud...`);
+
+        // Reset form immediately
+        form.reset();
+        document.querySelectorAll('.yes-no-btn').forEach(btn => {
+            btn.style.background = colors.white;
+            btn.style.borderColor = colors.neutral3;
+            btn.style.color = colors.neutral7;
+            btn.style.transform = 'scale(1)';
+            btn.removeAttribute('data-selected');
+        });
+        document.querySelectorAll('.case-type-radio').forEach(radio => {
+            const label = radio.closest('label');
+            label.style.borderColor = colors.neutral3;
+            label.style.background = colors.white;
+        });
+
+        updateStats(colors);
+        switchTab('records', colors);
+        
+        // Close sidebar immediately
+        setTimeout(() => toggleDrawer(), 500);
+
+        // Sync to cloud in BACKGROUND (don't block user)
+        syncToCloud(formData).then(success => {
+            console.log('[+] Cloud sync completed:', success ? 'SUCCESS' : 'FAILED');
+        });
+    });
+}
+
     }
 })();
