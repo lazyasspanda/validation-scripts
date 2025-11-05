@@ -11,6 +11,7 @@
 // @grant        GM_notification
 // @grant        GM_xmlhttpRequest
 // @grant        GM_openInTab
+// @connect      raw.githubusercontent.com
 // @updateURL    https://raw.githubusercontent.com/lazyasspanda/validation-scripts/main/Salesforce%20Case%20Validation%20Checklist.user.js
 // @downloadURL  https://raw.githubusercontent.com/lazyasspanda/validation-scripts/main/Salesforce%20Case%20Validation%20Checklist.user.js
 // @homepageURL  https://github.com/lazyasspanda/validation-scripts
@@ -20,102 +21,112 @@
 // ==/UserScript==
 
 (function checkForScriptUpdates() {
-  const currentVersion = '1.1'; // update this when you push a new version
-  const versionUrl = 'https://raw.githubusercontent.com/lazyasspanda/validation-scripts/main/Salesforce%20Case%20Validation%20Checklist.user.js';
-  const downloadUrl = versionUrl;
-  const CHECK_INTERVAL = 30 * 1000; // 30 seconds
-  const REMIND_LATER_MS = 2 * 60 * 60 * 1000; // 2 hours
+    const currentVersion = '1.1';
+    const versionUrl = 'https://raw.githubusercontent.com/lazyasspanda/validation-scripts/main/Salesforce%20Case%20Validation%20Checklist.user.js';
+    const downloadUrl = versionUrl;
+    const CHECK_INTERVAL = 30 * 1000;
+    const REMIND_LATER_MS = 2 * 60 * 60 * 1000;
 
-  function showUpdatePopup(latestVersion) {
-    // Skip if popup already exists
-    if (document.getElementById('updatePopupBox')) return;
+    function showUpdatePopup(latestVersion) {
+        const showPopup = () => {
+            if (document.getElementById('updatePopupBox')) return;
+            if (!document.body) {
+                setTimeout(showPopup, 100);
+                return;
+            }
 
-    const box = document.createElement('div');
-    box.id = 'updatePopupBox';
-    box.innerHTML = `
-      <div style="
-        position: fixed; 
-        bottom: 20px; 
-        right: 20px; 
-        background: #19325d; 
-        color: white; 
-        padding: 14px 18px; 
-        border-radius: 10px; 
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        z-index: 999999;
-        font-family: 'Segoe UI', Arial, sans-serif;
-        animation: fadeIn 0.3s ease-out;
-        max-width: 280px;
-      ">
-        <div style="font-weight: 700; margin-bottom: 6px;">🚀 Update Available</div>
-        <div style="font-size: 13px; margin-bottom: 10px;">New version <strong>${latestVersion}</strong> is available. You have <strong>${currentVersion}</strong>.</div>
-        <div style="display: flex; gap: 8px; justify-content: flex-end;">
-          <button id="updateNowBtn" style="background: #2ecc71; border: none; color: white; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">Update</button>
-          <button id="remindLaterBtn" style="background: #fb741c; border: none; color: white; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">Later</button>
-        </div>
-      </div>
-      <style>
-        @keyframes fadeIn { from {opacity: 0; transform: translateY(10px);} to {opacity: 1; transform: translateY(0);} }
-      </style>
-    `;
-    document.body.appendChild(box);
+            const box = document.createElement('div');
+            box.id = 'updatePopupBox';
+            box.innerHTML = `
+                <div style="
+                    position: fixed;
+                    bottom: 20px;
+                    right: 20px;
+                    background: #19325d;
+                    color: white;
+                    padding: 14px 18px;
+                    border-radius: 10px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                    z-index: 999999;
+                    font-family: 'Segoe UI', Arial, sans-serif;
+                    animation: fadeIn 0.3s ease-out;
+                    max-width: 280px;
+                ">
+                    <div style="font-weight: 700; margin-bottom: 6px;">🚀 Update Available</div>
+                    <div style="font-size: 13px; margin-bottom: 10px;">New version <strong>${latestVersion}</strong> is available. You have <strong>${currentVersion}</strong>.</div>
+                    <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                        <button id="updateNowBtn" style="background: #2ecc71; border: none; color: white; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">Update</button>
+                        <button id="remindLaterBtn" style="background: #fb741c; border: none; color: white; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">Later</button>
+                    </div>
+                </div>
+                <style>
+                    @keyframes fadeIn { from {opacity: 0; transform: translateY(10px);} to {opacity: 1; transform: translateY(0);} }
+                </style>
+            `;
+            document.body.appendChild(box);
 
-    // Handle update click
-    document.getElementById('updateNowBtn').addEventListener('click', () => {
-      localStorage.setItem('checklist_lastVersionAcknowledged', latestVersion);
-      window.open(downloadUrl, '_blank');
-      box.remove();
-    });
+            document.getElementById('updateNowBtn').addEventListener('click', () => {
+                localStorage.setItem('checklist_lastVersionAcknowledged', latestVersion);
+                window.open(downloadUrl, '_blank');
+                box.remove();
+            });
 
-    // Handle remind later click
-    document.getElementById('remindLaterBtn').addEventListener('click', () => {
-      const snoozeUntil = Date.now() + REMIND_LATER_MS;
-      localStorage.setItem('checklist_remindLaterUntil', snoozeUntil.toString());
-      box.remove();
-    });
-  }
-
-  function checkUpdate() {
-    const remindLaterUntil = parseInt(localStorage.getItem('checklist_remindLaterUntil') || '0', 10);
-    if (Date.now() < remindLaterUntil) return; // snoozed
-
-    const acknowledgedVersion = localStorage.getItem('checklist_lastVersionAcknowledged');
-    if (acknowledgedVersion && acknowledgedVersion === currentVersion) {
-      // User already updated to this version — stop showing popup
-      return;
+            document.getElementById('remindLaterBtn').addEventListener('click', () => {
+                const snoozeUntil = Date.now() + REMIND_LATER_MS;
+                localStorage.setItem('checklist_remindLaterUntil', snoozeUntil.toString());
+                box.remove();
+            });
+        };
+        
+        showPopup();
     }
 
-    GM_xmlhttpRequest({
-      method: 'GET',
-      url: versionUrl + '?t=' + Date.now(),
-      onload: function (response) {
-        if (response.status === 200) {
-          const match = response.responseText.match(/@version\s+([0-9.]+)/);
-          const latestVersion = match ? match[1] : null;
-
-          if (latestVersion && latestVersion !== currentVersion) {
-            console.log(`[Update] New version ${latestVersion} detected`);
-            showUpdatePopup(latestVersion);
-          } else {
-            console.log(`[Update] Up to date (current ${currentVersion})`);
-            // If up to date, clear any old "acknowledged" data
-            localStorage.removeItem('checklist_lastVersionAcknowledged');
-          }
-        } else {
-          console.log('[Update] HTTP error', response.status);
+    function checkUpdate() {
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', checkUpdate);
+            return;
         }
-      },
-      onerror: function (err) {
-        console.log('[Update] Error checking for update:', err);
-      }
-    });
-  }
 
-  // Start cycle
-  checkUpdate();
-  setInterval(checkUpdate, CHECK_INTERVAL);
+        const remindLaterUntil = parseInt(localStorage.getItem('checklist_remindLaterUntil') || '0', 10);
+        if (Date.now() < remindLaterUntil) {
+            console.log('[Update] Reminder snoozed until', new Date(remindLaterUntil).toLocaleString());
+            return;
+        }
+
+        const acknowledgedVersion = localStorage.getItem('checklist_lastVersionAcknowledged');
+        if (acknowledgedVersion && acknowledgedVersion === currentVersion) {
+            return;
+        }
+
+        console.log('[Update] Checking for updates...');
+        GM_xmlhttpRequest({
+            method: 'GET',
+            url: versionUrl + '?t=' + Date.now(),
+            onload: function (response) {
+                if (response.status === 200) {
+                    const match = response.responseText.match(/@version\s+([0-9.]+)/);
+                    const latestVersion = match ? match[1] : null;
+
+                    if (latestVersion && latestVersion !== currentVersion) {
+                        console.log(`[Update] New version ${latestVersion} detected (current: ${currentVersion})`);
+                        showUpdatePopup(latestVersion);
+                    } else {
+                        console.log(`[Update] Up to date (current ${currentVersion})`);
+                        localStorage.removeItem('checklist_lastVersionAcknowledged');
+                    }
+                } else {
+                    console.log('[Update] HTTP error', response.status);
+                }
+            },
+            onerror: function (err) {
+                console.log('[Update] Error checking for update:', err);
+            }
+        });
+    }
+
+    checkUpdate();
+    setInterval(checkUpdate, CHECK_INTERVAL);
 })();
-
 
 (function() {
     'use strict';
@@ -229,8 +240,8 @@
                 <p style="margin: 0; font-size: 11px; color: rgba(255,255,255,0.9); font-weight: 500;">Cloud Enabled</p>
             </div>
             <div style="display: flex; gap: 0; background: ${colors.brandDark}; border-radius: 6px 6px 0 0; overflow: hidden;">
-                <button id="tabChecklist" class="tab-btn" style="flex: 1; padding: 12px; background: ${colors.white}; border: none; color: ${colors.brand}; font-weight: 700; font-size: 12px; cursor: pointer; transition: all 0.3s ease;"><div style="display: flex; align-items: center; justify-content: center; gap: 5px;"><span style="font-size: 14px;">&#9999;</span><span>Checklist</span></div></button>
-                <button id="tabRecords" class="tab-btn" style="flex: 1; padding: 12px; background: ${colors.brandDark}; border: none; color: ${colors.white}; font-weight: 700; font-size: 12px; cursor: pointer; transition: all 0.3s ease;"><div style="display: flex; align-items: center; justify-content: center; gap: 5px;"><span style="font-size: 14px;">&#128217;</span><span>Records</span></div></button>
+                <button id="tabChecklist" class="tab-btn" style="flex: 1; padding: 12px; background: ${colors.white}; border: none; color: ${colors.brand}; font-weight: 700; font-size: 12px; cursor: pointer; transition: all 0.3s ease;">Checklist</button>
+                <button id="tabRecords" class="tab-btn" style="flex: 1; padding: 12px; background: ${colors.brandDark}; border: none; color: ${colors.white}; font-weight: 700; font-size: 12px; cursor: pointer; transition: all 0.3s ease;">Records</button>
             </div>
         `;
 
@@ -305,7 +316,7 @@
     function createValidationSection(colors) {
         const section = document.createElement('div');
         section.id = 'validationSection';
-        section.innerHTML = createCompactCard('&#128269; Basic Items', `<div style="background: linear-gradient(135deg, ${colors.neutral1} 0%, ${colors.white} 100%); padding: 12px; border-radius: 7px; border: 2px solid ${colors.brand};"><div style="display: grid; gap: 6px; margin-bottom: 12px;">${['&#128222; Subject Line', '&#128279; Example URL', '&#127965; Dealer ID', '&#128193; Category', '&#128275; Sub-Category'].map(item => `<div style="display: flex; align-items: center; gap: 8px; padding: 7px; background: ${colors.white}; border-radius: 5px; font-size: 12px; font-weight: 500;">${item}</div>`).join('')}</div><div style="padding-top: 10px; border-top: 2px solid ${colors.neutral2};"><div style="font-size: 12px; font-weight: 700; margin-bottom: 8px; text-align: center;">All completed?</div><div style="display: grid; grid-template-columns: 1fr; gap: 8px;">${createCompactYesNoBtn('basicValidation', 'yes', colors)}</div></div></div>`, colors).outerHTML;
+        section.innerHTML = createCompactCard('&#128269; Basic Items', `<div style="background: linear-gradient(135deg, ${colors.neutral1} 0%, ${colors.white} 100%); padding: 12px; border-radius: 7px; border: 2px solid ${colors.brand};"><div style="display: grid; gap: 6px; margin-bottom: 12px;">${['&#128222; Subject Line', '&#128279; Example URL', '&#127965; Dealer ID', '&#128193; Category', '&#128275; Sub-Category'].map(item => `<div style="display: flex; align-items: center; gap: 8px; padding: 7px; background: ${colors.white}; border-radius: 5px; font-size: 12px; font-weight: 500;">${item}</div>`).join('')}</div><div style="padding-top: 10px; border-top: 2px solid ${colors.neutral2};"><div style="font-size: 12px; font-weight: 700; margin-bottom: 8px; text-align: center;">All completed?</div><div style="display: grid; grid-template-columns: 1fr; gap: 8px;"><button type="button" class="yes-no-btn" data-group="basicValidation" data-value="yes" style="padding: 11px; border: 3px solid ${colors.neutral3}; border-radius: 7px; background: ${colors.white}; color: ${colors.neutral7}; font-size: 13px; font-weight: 800; cursor: pointer; transition: all 0.3s ease;">YES</button></div></div></div>`, colors).outerHTML;
         return section;
     }
 
@@ -328,13 +339,8 @@
     function createDetailedSection(colors) {
         const section = document.createElement('div');
         section.id = 'detailedSection';
-        section.innerHTML = createCompactCard('&#128221; Detailed Items', `<div style="background: linear-gradient(135deg, ${colors.neutral1} 0%, ${colors.white} 100%); padding: 12px; border-radius: 7px; border: 2px solid ${colors.brand};"><div style="font-size: 11px; line-height: 1.7; color: ${colors.neutral6}; margin-bottom: 12px;">&#10003; Read request with attachments<br>&#10003; Correct website<br>&#10003; Approvals received<br>&#10003; Followed all OEM guidelines / Compliance<br>&#10003; Case reviewed<br>&#10003; Customer updated for delays<br>&#10003; Refresher Link added<br>&#10003; Screenshots added<br>&#10003; Email details added (Summary of Request/Incident)<br>&#10003; System Edit updated<br>&#10003; Case status (Confirmation/Input)</div><div style="padding-top: 10px; border-top: 2px solid ${colors.neutral2};"><div style="font-size: 12px; font-weight: 700; margin-bottom: 8px; text-align: center;">All completed?</div><div style="display: grid; grid-template-columns: 1fr; gap: 8px;">${createCompactYesNoBtn('detailedValidation', 'yes', colors)}</div></div></div>`, colors).outerHTML;
+        section.innerHTML = createCompactCard('&#128221; Detailed Items', `<div style="background: linear-gradient(135deg, ${colors.neutral1} 0%, ${colors.white} 100%); padding: 12px; border-radius: 7px; border: 2px solid ${colors.brand};"><div style="font-size: 11px; line-height: 1.7; color: ${colors.neutral6}; margin-bottom: 12px;">&#10003; Read request with attachments<br>&#10003; Correct website<br>&#10003; Approvals received<br>&#10003; Followed all OEM guidelines / Compliance<br>&#10003; Case reviewed<br>&#10003; Customer updated for delays<br>&#10003; Refresher Link added<br>&#10003; Screenshots added<br>&#10003; Email details added (Summary of Request/Incident)<br>&#10003; System Edit updated<br>&#10003; Case status (Confirmation/Input)</div><div style="padding-top: 10px; border-top: 2px solid ${colors.neutral2};"><div style="font-size: 12px; font-weight: 700; margin-bottom: 8px; text-align: center;">All completed?</div><div style="display: grid; grid-template-columns: 1fr; gap: 8px;"><button type="button" class="yes-no-btn" data-group="detailedValidation" data-value="yes" style="padding: 11px; border: 3px solid ${colors.neutral3}; border-radius: 7px; background: ${colors.white}; color: ${colors.neutral7}; font-size: 13px; font-weight: 800; cursor: pointer; transition: all 0.3s ease;">YES</button></div></div></div>`, colors).outerHTML;
         return section;
-    }
-
-    function createCompactYesNoBtn(group, value, colors) {
-        const isYes = value === 'yes';
-        return `<button type="button" class="yes-no-btn" data-group="${group}" data-value="${value}" style="padding: 11px; border: 3px solid ${colors.neutral3}; border-radius: 7px; background: ${colors.white}; color: ${colors.neutral7}; font-size: 13px; font-weight: 800; cursor: pointer; transition: all 0.3s ease;">${isYes ? '&#10003; YES' : '&#10005; NO'}</button>`;
     }
 
     function createCompactRecordsContent(colors) {
@@ -404,7 +410,7 @@
                 recordsList.innerHTML = `<div style="text-align: center; padding: 36px 16px; background: ${colors.white}; border-radius: 10px; border: 3px dashed ${colors.neutral3};"><div style="font-size: 56px; opacity: 0.5;">&#128680;</div><p style="margin: 0; font-size: 14px; font-weight: 700; color: ${colors.neutral6};">No records yet</p><p style="margin: 6px 0 0 0; font-size: 11px; color: ${colors.neutral5};">Start your quality trail!</p></div>`;
             } else {
                 const sortedRecords = [...records].sort((a, b) => b.recordNumber - a.recordNumber);
-                recordsList.innerHTML = sortedRecords.map((record, index) => `<div style="background: ${colors.white}; padding: 14px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid ${colors.brand}; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); animation: slideIn 0.3s ease-out ${index * 0.04}s both;"><div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;"><div><div style="font-size: 15px; font-weight: 900; color: ${colors.brand}; margin-bottom: 3px;">#${record.recordNumber} ${index === 0 ? '&#11088;' : ''}</div><div style="font-size: 10px; color: ${colors.neutral5}; font-weight: 600;">${record.readableTime}</div></div></div><div style="font-size: 12px; margin-bottom: 6px; padding: 8px; background: ${colors.neutral1}; border-radius: 5px;"><strong style="color: ${colors.brand};">Emp:</strong> <span style="font-weight: 700; font-size: 11px;">${record.employeeName}</span></div><div style="font-size: 12px; margin-bottom: 6px; padding: 8px; background: ${colors.neutral1}; border-radius: 5px;"><strong style="color: ${colors.brand};">Case:</strong> <span style="font-family: monospace; font-weight: 700; font-size: 11px;">${record.caseNumber}</span></div><div style="font-size: 11px; color: ${colors.neutral6}; margin-bottom: 5px;"><strong>Basic:</strong> <span style="color: ${record.basicValidation === 'Yes' ? colors.success : colors.error}; font-weight: 700;">${record.basicValidation}</span></div><div style="font-size: 11px; color: ${colors.neutral6}; margin-bottom: 5px;"><strong>Case Type:</strong> <span style="color: ${colors.success}; font-weight: 700;">${record.caseTypeVerification}</span></div><div style="font-size: 11px; color: ${colors.neutral6};"><strong>Detailed:</strong> <span style="color: ${record.detailedValidation === 'Yes' ? colors.success : colors.error}; font-weight: 700;">${record.detailedValidation}</span></div></div>`).join('');
+                recordsList.innerHTML = sortedRecords.map((record, index) => `<div style="background: ${colors.white}; padding: 14px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid ${colors.brand}; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);"><div style="font-size: 15px; font-weight: 900; color: ${colors.brand}; margin-bottom: 3px;">#${record.recordNumber}</div><div style="font-size: 10px; color: ${colors.neutral5}; font-weight: 600; margin-bottom: 8px;">${record.readableTime}</div><div style="font-size: 12px; margin-bottom: 6px; padding: 8px; background: ${colors.neutral1}; border-radius: 5px;"><strong style="color: ${colors.brand};">Emp:</strong> <span style="font-weight: 700; font-size: 11px;">${record.employeeName}</span></div><div style="font-size: 12px; margin-bottom: 6px; padding: 8px; background: ${colors.neutral1}; border-radius: 5px;"><strong style="color: ${colors.brand};">Case:</strong> <span style="font-family: monospace; font-weight: 700; font-size: 11px;">${record.caseNumber}</span></div><div style="font-size: 11px; color: ${colors.neutral6}; margin-bottom: 5px;"><strong>Type:</strong> <span style="color: ${colors.success}; font-weight: 700;">${record.caseTypeVerification}</span></div></div>`).join('');
             }
         } catch (e) {
             console.log('[!] Error loading records:', e);
@@ -430,7 +436,7 @@
     async function syncToCloud(formData) {
         try {
             console.log('[*] Syncing to cloud...');
-            return new Promise((resolve, reject) => {
+            return new Promise((resolve) => {
                 GM_xmlhttpRequest({
                     method: 'POST',
                     url: CLOUD_CONFIG.googleWebhookUrl,
@@ -479,15 +485,7 @@
             { icon: '🔑', text: 'Your work is your signature - make it count' },
             { icon: '🔥', text: 'Attention to detail is the difference between good and great' },
             { icon: '✵', text: 'Do it right the first time, every time' },
-            { icon: '🏆', text: 'Quality means doing it right when no one is looking' },
-            { icon: '😀', text: 'Better to do it slowly and correctly than quickly and wrong' },
-            { icon: '💎', text: 'The bitterness of poor quality remains long after low price is forgotten' },
-            { icon: '★', text: 'Small details make perfection, and perfection is no small detail' },
-            { icon: '🔍', text: 'The more you check, the luckier you get' },
-            { icon: '👈', text: 'Measure twice, cut once - validate always' },
-            { icon: '🛡', text: 'Prevention is better than correction' },
-            { icon: '😉', text: 'Consistency is the hallmark of excellence' },
-            { icon: '♪', text: 'Perfect practice makes perfect performance' }
+            { icon: '🏆', text: 'Quality means doing it right when no one is looking' }
         ];
 
         let quoteIndex = 0;
