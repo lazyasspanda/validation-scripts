@@ -19,22 +19,42 @@
 // @run-at       document-start
 // ==/UserScript==
 
-(async () => {
+(function checkForScriptUpdates() {
   const currentVersion = '7.2';
-  const versionUrl = 'https://raw.githubusercontent.com/pratikchabria/salesforce-case-validation/main/Salesforce-Case-Validation-Checklist.user.js';
+  const versionUrl = 'https://raw.githubusercontent.com/lazyasspanda/validation-scripts/main/Salesforce%20Case%20Validation%20Checklist.user.js';
 
-  try {
-    const response = await fetch(versionUrl);
-    const text = await response.text();
-    const match = text.match(/@version\s+([0-9.]+)/);
-    const latestVersion = match ? match[1] : null;
+  async function checkUpdate() {
+    try {
+      GM_xmlhttpRequest({
+        method: 'GET',
+        url: versionUrl + '?t=' + Date.now(), // prevent caching
+        onload: function (response) {
+          if (response.status === 200) {
+            const match = response.responseText.match(/@version\s+([0-9.]+)/);
+            const latestVersion = match ? match[1] : null;
 
-    if (latestVersion && latestVersion !== currentVersion) {
-      alert(`🚀 A new version (${latestVersion}) of the Validation Checklist is available! Please update from Tampermonkey.`);
+            if (latestVersion && latestVersion !== currentVersion) {
+              alert(`🚀 A new version (${latestVersion}) of the Validation Checklist is available!\n\nPlease update from Tampermonkey.`);
+              console.log(`[Update] New version ${latestVersion} available (current ${currentVersion})`);
+            } else {
+              console.log(`[Update] No new version detected (still ${currentVersion})`);
+            }
+          } else {
+            console.log('[Update] Failed to fetch version file: HTTP', response.status);
+          }
+        },
+        onerror: function (err) {
+          console.log('[Update] Version check error:', err);
+        }
+      });
+    } catch (err) {
+      console.log('[Update] Exception while checking updates:', err);
     }
-  } catch (err) {
-    console.log('Update check failed:', err);
   }
+
+  // Run immediately, then every 30 seconds
+  checkUpdate();
+  setInterval(checkUpdate, 30 * 1000);
 })();
 
 (function() {
