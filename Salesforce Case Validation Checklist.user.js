@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Salesforce Case Validation Checklist
 // @namespace    http://tampermonkey.net/
-// @version      7.2
+// @version      7.3
 // @description  Cloud-integrated validation checklist with manager dashboard
 // @author       Pratik Chabria
 // @match        https://dealeron.lightning.force.com/*
@@ -18,44 +18,106 @@
 // @icon         https://www.google.com/s2/favicons?domain=salesforce.com
 // @run-at       document-start
 // ==/UserScript==
+(function() {
+    'use strict';
 
 (function checkForScriptUpdates() {
-  const currentVersion = '7.2';
+  const currentVersion = '7.1'; // update this when you push a new version
   const versionUrl = 'https://raw.githubusercontent.com/lazyasspanda/validation-scripts/main/Salesforce%20Case%20Validation%20Checklist.user.js';
+  const downloadUrl = versionUrl;
+  const CHECK_INTERVAL = 30 * 1000; // 30 seconds
+  const REMIND_LATER_MS = 2 * 60 * 60 * 1000; // 2 hours
 
-  async function checkUpdate() {
-    try {
-      GM_xmlhttpRequest({
-        method: 'GET',
-        url: versionUrl + '?t=' + Date.now(), // prevent caching
-        onload: function (response) {
-          if (response.status === 200) {
-            const match = response.responseText.match(/@version\s+([0-9.]+)/);
-            const latestVersion = match ? match[1] : null;
+  function showUpdatePopup(latestVersion) {
+    // Skip if popup already exists
+    if (document.getElementById('updatePopupBox')) return;
 
-            if (latestVersion && latestVersion !== currentVersion) {
-              alert(`🚀 A new version (${latestVersion}) of the Validation Checklist is available!\n\nPlease update from Tampermonkey.`);
-              console.log(`[Update] New version ${latestVersion} available (current ${currentVersion})`);
-            } else {
-              console.log(`[Update] No new version detected (still ${currentVersion})`);
-            }
-          } else {
-            console.log('[Update] Failed to fetch version file: HTTP', response.status);
-          }
-        },
-        onerror: function (err) {
-          console.log('[Update] Version check error:', err);
-        }
-      });
-    } catch (err) {
-      console.log('[Update] Exception while checking updates:', err);
-    }
+    const box = document.createElement('div');
+    box.id = 'updatePopupBox';
+    box.innerHTML = `
+      <div style="
+        position: fixed; 
+        bottom: 20px; 
+        right: 20px; 
+        background: #19325d; 
+        color: white; 
+        padding: 14px 18px; 
+        border-radius: 10px; 
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        z-index: 999999;
+        font-family: 'Segoe UI', Arial, sans-serif;
+        animation: fadeIn 0.3s ease-out;
+        max-width: 280px;
+      ">
+        <div style="font-weight: 700; margin-bottom: 6px;">🚀 Update Available</div>
+        <div style="font-size: 13px; margin-bottom: 10px;">New version <strong>${latestVersion}</strong> is available. You have <strong>${currentVersion}</strong>.</div>
+        <div style="display: flex; gap: 8px; justify-content: flex-end;">
+          <button id="updateNowBtn" style="background: #2ecc71; border: none; color: white; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">Update</button>
+          <button id="remindLaterBtn" style="background: #fb741c; border: none; color: white; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">Later</button>
+        </div>
+      </div>
+      <style>
+        @keyframes fadeIn { from {opacity: 0; transform: translateY(10px);} to {opacity: 1; transform: translateY(0);} }
+      </style>
+    `;
+    document.body.appendChild(box);
+
+    // Handle update click
+    document.getElementById('updateNowBtn').addEventListener('click', () => {
+      localStorage.setItem('checklist_lastVersionAcknowledged', latestVersion);
+      window.open(downloadUrl, '_blank');
+      box.remove();
+    });
+
+    // Handle remind later click
+    document.getElementById('remindLaterBtn').addEventListener('click', () => {
+      const snoozeUntil = Date.now() + REMIND_LATER_MS;
+      localStorage.setItem('checklist_remindLaterUntil', snoozeUntil.toString());
+      box.remove();
+    });
   }
 
-  // Run immediately, then every 30 seconds
+  function checkUpdate() {
+    const remindLaterUntil = parseInt(localStorage.getItem('checklist_remindLaterUntil') || '0', 10);
+    if (Date.now() < remindLaterUntil) return; // snoozed
+
+    const acknowledgedVersion = localStorage.getItem('checklist_lastVersionAcknowledged');
+    if (acknowledgedVersion && acknowledgedVersion === currentVersion) {
+      // User already updated to this version — stop showing popup
+      return;
+    }
+
+    GM_xmlhttpRequest({
+      method: 'GET',
+      url: versionUrl + '?t=' + Date.now(),
+      onload: function (response) {
+        if (response.status === 200) {
+          const match = response.responseText.match(/@version\s+([0-9.]+)/);
+          const latestVersion = match ? match[1] : null;
+
+          if (latestVersion && latestVersion !== currentVersion) {
+            console.log(`[Update] New version ${latestVersion} detected`);
+            showUpdatePopup(latestVersion);
+          } else {
+            console.log(`[Update] Up to date (current ${currentVersion})`);
+            // If up to date, clear any old "acknowledged" data
+            localStorage.removeItem('checklist_lastVersionAcknowledged');
+          }
+        } else {
+          console.log('[Update] HTTP error', response.status);
+        }
+      },
+      onerror: function (err) {
+        console.log('[Update] Error checking for update:', err);
+      }
+    });
+  }
+
+  // Start cycle
   checkUpdate();
-  setInterval(checkUpdate, 30 * 1000);
+  setInterval(checkUpdate, CHECK_INTERVAL);
 })();
+
 
 (function() {
     'use strict';
