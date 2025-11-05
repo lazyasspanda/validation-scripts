@@ -12,6 +12,7 @@
 // @grant        GM_xmlhttpRequest
 // @grant        GM_openInTab
 // @connect      raw.githubusercontent.com
+// @connect      script.google.com
 // @updateURL    https://raw.githubusercontent.com/lazyasspanda/validation-scripts/main/Salesforce%20Case%20Validation%20Checklist.user.js
 // @downloadURL  https://raw.githubusercontent.com/lazyasspanda/validation-scripts/main/Salesforce%20Case%20Validation%20Checklist.user.js
 // @homepageURL  https://github.com/lazyasspanda/validation-scripts
@@ -78,9 +79,9 @@
                     ">Update Now</button>
                 </div>
                 <style>
-                    @keyframes slideUpFadeIn { 
-                        from {opacity: 0; transform: translateY(20px);} 
-                        to {opacity: 1; transform: translateY(0);} 
+                    @keyframes slideUpFadeIn {
+                        from {opacity: 0; transform: translateY(20px);}
+                        to {opacity: 1; transform: translateY(0);}
                     }
                     #updateNowBtn:hover {
                         transform: translateY(-2px);
@@ -98,7 +99,7 @@
                 box.remove();
             });
         };
-        
+
         showPopup();
     }
 
@@ -111,7 +112,7 @@
         // Check if user recently clicked Update button
         const lastUpdateClick = parseInt(localStorage.getItem('checklist_lastUpdateClick') || '0', 10);
         const timeSinceClick = Date.now() - lastUpdateClick;
-        
+
         if (timeSinceClick < SUPPRESS_AFTER_UPDATE_MS && timeSinceClick > 0) {
             console.log('[Update] Recently clicked Update - suppressing check for', Math.floor((SUPPRESS_AFTER_UPDATE_MS - timeSinceClick) / 1000), 'more seconds');
             return;
@@ -151,7 +152,7 @@
 
     // Initial check after 2 seconds
     setTimeout(checkUpdate, 2000);
-    
+
     // Then check periodically
     setInterval(checkUpdate, CHECK_INTERVAL);
 })();
@@ -263,7 +264,7 @@
         header.style.cssText = `background: linear-gradient(135deg, ${colors.brand} 0%, ${colors.brandDark} 100%); padding: 12px 20px 0 20px; position: relative; box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);`;
         header.innerHTML = `
             <button id="closeDrawer" style="position: absolute; top: 8px; right: 12px; background: ${colors.white}; border: none; width: 28px; height: 28px; border-radius: 50%; font-size: 18px; cursor: pointer; color: ${colors.brand}; font-weight: bold; transition: all 0.3s ease; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2); display: flex; align-items: center; justify-content: center; z-index: 10;">&#10005;</button>
-            <div style="text-align: center; margin-bottom: 12px;">        
+            <div style="text-align: center; margin-bottom: 12px;">
                 <h2 style="margin: 0 0 3px 0; font-size: 18px; font-weight: 800; color: ${colors.white}; letter-spacing: -0.3px;">Validation Hub</h2>
                 <div style="margin: 0; font-size: 11px; color: rgba(255,255,255,0.9); font-weight: 500;">
     Cloud Enabled v7.4
@@ -479,29 +480,48 @@
     }
 
     async function syncToCloud(formData) {
-        try {
-            console.log('[*] Syncing to cloud...');
-            return new Promise((resolve) => {
-                GM_xmlhttpRequest({
-                    method: 'POST',
-                    url: CLOUD_CONFIG.googleWebhookUrl,
-                    headers: { 'Content-Type': 'application/json' },
-                    data: JSON.stringify(formData),
-                    onload: function(response) {
+    try {
+        console.log('[*] Syncing to cloud...');
+        console.log('[*] Webhook URL:', CLOUD_CONFIG.googleWebhookUrl);
+        console.log('[*] Data being sent:', formData);
+
+        return new Promise((resolve) => {
+            GM_xmlhttpRequest({
+                method: 'POST',
+                url: CLOUD_CONFIG.googleWebhookUrl,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                data: JSON.stringify(formData),
+                timeout: 30000,
+                onload: function(response) {
+                    console.log('[+] Cloud sync response status:', response.status);
+                    console.log('[+] Cloud sync response:', response.responseText);
+                    if (response.status >= 200 && response.status < 300) {
                         console.log('[+] Cloud sync successful');
                         resolve(true);
-                    },
-                    onerror: function(error) {
-                        console.log('[!] Cloud sync error:', error);
+                    } else {
+                        console.log('[!] Cloud sync failed with status:', response.status);
                         resolve(false);
                     }
-                });
+                },
+                onerror: function(error) {
+                    console.log('[!] Cloud sync error:', error);
+                    resolve(false);
+                },
+                onreadystatechange: function(response) {
+                    if (response.readyState === 4) {
+                        console.log('[*] Request complete, status:', response.status);
+                    }
+                }
             });
-        } catch (e) {
-            console.log('[!] Cloud sync error:', e.toString());
-            return false;
-        }
+        });
+    } catch (e) {
+        console.log('[!] Cloud sync exception:', e.toString());
+        return false;
     }
+}
 
     function setupEventListeners(triggerBar, drawer, colors) {
         triggerBar.addEventListener('click', toggleDrawer);
@@ -513,30 +533,30 @@ document.getElementById('checkUpdatesBtn').addEventListener('click', () => {
     const currentVersion = '1.6'; // Match @version at top
     const downloadUrl = 'https://raw.githubusercontent.com/lazyasspanda/validation-scripts/main/Salesforce%20Case%20Validation%20Checklist.user.js';
     const checkUpdateBtn = document.getElementById('checkUpdatesBtn');
-    
+
     // If button is in "Update Available" state and user clicks, open the link
     if (checkUpdateBtn.getAttribute('data-update-ready') === 'true') {
         console.log('[Update] Opening update link');
         window.open(downloadUrl, '_blank');
         return;
     }
-    
+
     console.log('[Update] Manual check triggered by user');
     checkUpdateBtn.style.opacity = '0.6';
     checkUpdateBtn.innerHTML = '⟳ Checking...';
-    
+
     GM_xmlhttpRequest({
         method: 'GET',
         url: downloadUrl + '?t=' + Date.now(),
         onload: function (response) {
             checkUpdateBtn.style.opacity = '1';
-            
+
             if (response.status === 200) {
                 const match = response.responseText.match(/@version\s+([0-9.]+)/);
                 const latestVersion = match ? match[1] : null;
-                
+
                 console.log('[Update] Current: ' + currentVersion + ', GitHub: ' + latestVersion);
-                
+
                 if (latestVersion && latestVersion !== currentVersion) {
                     // UPDATE AVAILABLE
                     console.log(`[Update] ✓ New version ${latestVersion} available!`);
@@ -544,7 +564,7 @@ document.getElementById('checkUpdatesBtn').addEventListener('click', () => {
                     checkUpdateBtn.style.background = '#2ecc71';
                     checkUpdateBtn.style.cursor = 'pointer';
                     checkUpdateBtn.setAttribute('data-update-ready', 'true');
-                    
+
                     alert(`[✓] Update Available!\n\nCurrent: v${currentVersion}\nLatest: v${latestVersion}\n\nClick the button to open the update link.`);
                 } else {
                     // NO UPDATE NEEDED
@@ -553,9 +573,9 @@ document.getElementById('checkUpdatesBtn').addEventListener('click', () => {
                     checkUpdateBtn.style.background = '#27ae60';
                     checkUpdateBtn.style.cursor = 'default';
                     checkUpdateBtn.setAttribute('data-update-ready', 'false');
-                    
+
                     alert(`[✓] You're up to date!\n\nVersion: v${currentVersion}`);
-                    
+
                     // Reset after 3 seconds
                     setTimeout(() => {
                         checkUpdateBtn.innerHTML = '⟳ Check for Updates';
@@ -574,9 +594,9 @@ document.getElementById('checkUpdatesBtn').addEventListener('click', () => {
             checkUpdateBtn.innerHTML = '✗ Check Failed';
             checkUpdateBtn.style.background = '#e74c3c';
             checkUpdateBtn.setAttribute('data-update-ready', 'false');
-            
+
             alert('[✗] Update check failed!\n\nPlease try again later.');
-            
+
             // Reset after 3 seconds
             setTimeout(() => {
                 checkUpdateBtn.innerHTML = '⟳ Check for Updates';
@@ -743,7 +763,7 @@ document.getElementById('checkUpdatesBtn').addEventListener('click', () => {
 
         updateStats(colors);
         switchTab('records', colors);
-        
+
         // Close sidebar immediately
         setTimeout(() => toggleDrawer(), 500);
 
