@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Salesforce Case Validation Checklist
 // @namespace    http://tampermonkey.net/
-// @version      1.3
+// @version      1.4
 // @description  Cloud-integrated validation checklist with manager dashboard
 // @author       Pratik Chabria
 // @match        https://dealeron.lightning.force.com/*
@@ -263,7 +263,7 @@
         header.style.cssText = `background: linear-gradient(135deg, ${colors.brand} 0%, ${colors.brandDark} 100%); padding: 12px 20px 0 20px; position: relative; box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);`;
         header.innerHTML = `
             <button id="closeDrawer" style="position: absolute; top: 8px; right: 12px; background: ${colors.white}; border: none; width: 28px; height: 28px; border-radius: 50%; font-size: 18px; cursor: pointer; color: ${colors.brand}; font-weight: bold; transition: all 0.3s ease; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2); display: flex; align-items: center; justify-content: center; z-index: 10;">&#10005;</button>
-            <div style="text-align: center; margin-bottom: 12px;">
+            <div style="text-align: center; margin-bottom: 12px;">        
                 <h2 style="margin: 0 0 3px 0; font-size: 18px; font-weight: 800; color: ${colors.white}; letter-spacing: -0.3px;">Validation Hub</h2>
                 <p style="margin: 0; font-size: 11px; color: rgba(255,255,255,0.9); font-weight: 500;">Cloud Enabled v7.4</p>
             </div>
@@ -284,7 +284,7 @@
         const statsBadge = document.createElement('div');
         statsBadge.id = 'statsBadge';
         statsBadge.style.cssText = `background: linear-gradient(135deg, ${colors.brand} 0%, ${colors.brandDark} 100%); padding: 12px; border-radius: 10px; margin-bottom: 12px; color: ${colors.white}; box-shadow: 0 4px 12px rgba(25, 50, 93, 0.3); text-align: center;`;
-        statsBadge.innerHTML = `<div style="display: flex; align-items: center; justify-content: center; gap: 10px;"><div style="font-size: 28px;">&#127996;</div><div><div style="font-size: 11px; font-weight: 700; opacity: 0.9;">Validation Streak</div><div id="streakCount" style="font-size: 22px; font-weight: 900;">0</div></div></div>`;
+        statsBadge.innerHTML = `<div style="display: flex; align-items: center; justify-content: center; gap: 10px;"> <div><div style="font-size: 11px; font-weight: 700; opacity: 0.9;">Validation Streak</div><div id="streakCount" style="font-size: 22px; font-weight: 900;">0</div></div></div>`;
 
         const quoteSection = document.createElement('div');
         quoteSection.id = 'quoteSection';
