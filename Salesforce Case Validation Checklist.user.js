@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Salesforce Case Validation Checklist
 // @namespace    http://tampermonkey.net/
-// @version      1.5
+// @version      1.6
 // @description  Cloud-integrated validation checklist with manager dashboard
 // @author       Pratik Chabria
 // @match        https://dealeron.lightning.force.com/*
@@ -21,7 +21,7 @@
 // ==/UserScript==
 
 (function checkForScriptUpdates() {
-    const currentVersion = '1.5';
+    const currentVersion = '1.6';
     const versionUrl = 'https://raw.githubusercontent.com/lazyasspanda/validation-scripts/main/Salesforce%20Case%20Validation%20Checklist.user.js';
     const downloadUrl = versionUrl;
     const CHECK_INTERVAL = 24 * 60 * 60 * 1000; // Check every 24 hours (1 day)
@@ -266,7 +266,7 @@
             <div style="text-align: center; margin-bottom: 12px;">        
                 <h2 style="margin: 0 0 3px 0; font-size: 18px; font-weight: 800; color: ${colors.white}; letter-spacing: -0.3px;">Validation Hub</h2>
                 <div style="margin: 0; font-size: 11px; color: rgba(255,255,255,0.9); font-weight: 500;">
-    Cloud Enabled
+    Cloud Enabled v7.4
     <button id="checkUpdatesBtn" style="
         display: block;
         width: 100%;
@@ -508,53 +508,80 @@
         document.getElementById('closeDrawer').addEventListener('click', toggleDrawer);
         document.getElementById('tabChecklist').addEventListener('click', () => switchTab('checklist', colors));
         document.getElementById('tabRecords').addEventListener('click', () => switchTab('records', colors));
-                // Check for Updates button handler
+                 // Check for Updates button handler
         document.getElementById('checkUpdatesBtn').addEventListener('click', () => {
-            console.log('[Update] Manual update check triggered');
+            const currentVersion = '7.4'; // Make sure this matches @version at top
+            const downloadUrl = 'https://raw.githubusercontent.com/lazyasspanda/validation-scripts/main/Salesforce%20Case%20Validation%20Checklist.user.js';
             const checkUpdateBtn = document.getElementById('checkUpdatesBtn');
+            
+            console.log('[Update] Manual check triggered by user');
             checkUpdateBtn.style.opacity = '0.6';
             checkUpdateBtn.innerHTML = '⟳ Checking...';
             
-            // Call the update check manually
-            setTimeout(() => {
-                GM_xmlhttpRequest({
-                    method: 'GET',
-                    url: 'https://raw.githubusercontent.com/lazyasspanda/validation-scripts/main/Salesforce%20Case%20Validation%20Checklist.user.js?t=' + Date.now(),
-                    onload: function (response) {
-                        checkUpdateBtn.style.opacity = '1';
-                        if (response.status === 200) {
-                            const match = response.responseText.match(/@version\s+([0-9.]+)/);
-                            const latestVersion = match ? match[1] : null;
-                            const currentVersion = '7.4';
+            GM_xmlhttpRequest({
+                method: 'GET',
+                url: downloadUrl + '?t=' + Date.now(),
+                onload: function (response) {
+                    checkUpdateBtn.style.opacity = '1';
+                    
+                    if (response.status === 200) {
+                        const match = response.responseText.match(/@version\s+([0-9.]+)/);
+                        const latestVersion = match ? match[1] : null;
+                        
+                        console.log('[Update] Current: ' + currentVersion + ', GitHub: ' + latestVersion);
+                        
+                        if (latestVersion && latestVersion !== currentVersion) {
+                            // UPDATE AVAILABLE
+                            console.log(`[Update] ✓ New version ${latestVersion} available!`);
+                            checkUpdateBtn.innerHTML = '✓ Update Available: v' + latestVersion;
+                            checkUpdateBtn.style.background = '#2ecc71';
+                            checkUpdateBtn.style.cursor = 'pointer';
                             
-                            if (latestVersion && latestVersion !== currentVersion) {
-                                console.log(`[Update] New version ${latestVersion} found!`);
-                                checkUpdateBtn.innerHTML = '✓ Update Available!';
-                                checkUpdateBtn.style.background = '#2ecc71';
-                                alert(`Update available: ${latestVersion}\n\nClick the link to install.`);
-                            } else {
-                                console.log('[Update] Already up to date');
-                                checkUpdateBtn.innerHTML = '✓ Up to Date';
-                                checkUpdateBtn.style.background = '#27ae60';
-                                setTimeout(() => {
-                                    checkUpdateBtn.innerHTML = '⟳ Check for Updates';
-                                    checkUpdateBtn.style.background = '#fb741c';
-                                }, 2000);
-                            }
+                            // Make button clickable to open update link
+                            checkUpdateBtn.onclick = () => {
+                                window.open(downloadUrl, '_blank');
+                            };
+                            
+                            alert(`[✓] Update Available!\n\nCurrent: v${currentVersion}\nLatest: v${latestVersion}\n\nClick the button again to open the update link.`);
+                        } else {
+                            // NO UPDATE NEEDED
+                            console.log(`[Update] ✓ Already up to date (v${currentVersion})`);
+                            checkUpdateBtn.innerHTML = '✓ No Updates Available';
+                            checkUpdateBtn.style.background = '#27ae60';
+                            checkUpdateBtn.style.cursor = 'default';
+                            checkUpdateBtn.onclick = null;
+                            
+                            alert(`[✓] You're up to date!\n\nVersion: v${currentVersion}`);
+                            
+                            // Reset after 3 seconds
+                            setTimeout(() => {
+                                checkUpdateBtn.innerHTML = '⟳ Check for Updates';
+                                checkUpdateBtn.style.background = '#fb741c';
+                                checkUpdateBtn.style.cursor = 'pointer';
+                                checkUpdateBtn.onclick = null;
+                            }, 3000);
                         }
-                    },
-                    onerror: function () {
-                        checkUpdateBtn.style.opacity = '1';
-                        checkUpdateBtn.innerHTML = '✗ Check Failed';
-                        checkUpdateBtn.style.background = '#e74c3c';
-                        setTimeout(() => {
-                            checkUpdateBtn.innerHTML = '⟳ Check for Updates';
-                            checkUpdateBtn.style.background = '#fb741c';
-                        }, 2000);
+                    } else {
+                        throw new Error('HTTP ' + response.status);
                     }
-                });
-            }, 500);
+                },
+                onerror: function (err) {
+                    checkUpdateBtn.style.opacity = '1';
+                    console.log('[Update] Check failed:', err);
+                    checkUpdateBtn.innerHTML = '✗ Check Failed';
+                    checkUpdateBtn.style.background = '#e74c3c';
+                    
+                    alert('[✗] Update check failed!\n\nPlease try again later.');
+                    
+                    // Reset after 3 seconds
+                    setTimeout(() => {
+                        checkUpdateBtn.innerHTML = '⟳ Check for Updates';
+                        checkUpdateBtn.style.background = '#fb741c';
+                    }, 3000);
+                }
+            });
         });
+
 
 
         const employeeNameInput = document.getElementById('employeeNameInput');
