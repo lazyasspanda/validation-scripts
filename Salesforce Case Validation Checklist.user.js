@@ -266,7 +266,7 @@
             <div style="text-align: center; margin-bottom: 12px;">        
                 <h2 style="margin: 0 0 3px 0; font-size: 18px; font-weight: 800; color: ${colors.white}; letter-spacing: -0.3px;">Validation Hub</h2>
                 <div style="margin: 0; font-size: 11px; color: rgba(255,255,255,0.9); font-weight: 500;">
-    Cloud Enabled v7.4
+    Cloud Enabled
     <button id="checkUpdatesBtn" style="
         display: block;
         width: 100%;
