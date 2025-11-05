@@ -21,7 +21,7 @@
 // ==/UserScript==
 
 (function checkForScriptUpdates() {
-    const currentVersion = '1.3';
+    const currentVersion = '1.4';
     const versionUrl = 'https://raw.githubusercontent.com/lazyasspanda/validation-scripts/main/Salesforce%20Case%20Validation%20Checklist.user.js';
     const downloadUrl = versionUrl;
     const CHECK_INTERVAL = 24 * 60 * 60 * 1000; // Check every 24 hours (1 day)
@@ -507,14 +507,14 @@
         });
 
         const funQuotes = [
-            { icon: '✎', text: 'Quality is not an act, it is a habit' },
-            { icon: '⚬', text: 'Excellence is doing ordinary things extraordinarily well' },
-            { icon: '▶', text: 'The devil is in the details, but so is salvation' },
-            { icon: '🔑', text: 'Your work is your signature - make it count' },
-            { icon: '🔥', text: 'Attention to detail is the difference between good and great' },
-            { icon: '✵', text: 'Do it right the first time, every time' },
-            { icon: '🏆', text: 'Quality means doing it right when no one is looking' }
-        ];
+    { icon: '★', text: 'Quality is not an act, it is a habit' },
+    { icon: '●', text: 'Excellence is doing ordinary things extraordinarily well' },
+    { icon: '►', text: 'The devil is in the details, but so is salvation' },
+    { icon: '◆', text: 'Your work is your signature - make it count' },
+    { icon: '✓', text: 'Attention to detail is the difference between good and great' },
+    { icon: '✦', text: 'Do it right the first time, every time' },
+    { icon: '◈', text: 'Quality means doing it right when no one is looking' }
+];
 
         let quoteIndex = 0;
         setInterval(() => {
