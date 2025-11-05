@@ -6,7 +6,11 @@
 // @author       Pratik Chabria
 // @match        https://dealeron.lightning.force.com/*
 // @match        https://*.lightning.force.com/*
+// @grant        GM_getValue
+// @grant        GM_setValue
+// @grant        GM_notification
 // @grant        GM_xmlhttpRequest
+// @grant        GM_openInTab
 // @require      https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js
 // @icon         https://www.google.com/s2/favicons?domain=salesforce.com
 // @run-at       document-start
