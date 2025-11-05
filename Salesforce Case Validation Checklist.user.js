@@ -66,7 +66,10 @@
             document.body.appendChild(box);
 
             document.getElementById('updateNowBtn').addEventListener('click', () => {
-                localStorage.setItem('checklist_lastVersionAcknowledged', latestVersion);
+                // Store ONLY the fact that user clicked update, not the version
+                localStorage.setItem('checklist_updateClicked', 'true');
+                localStorage.setItem('checklist_updateClickedTime', Date.now().toString());
+                console.log('[Update] User clicked Update - opening GitHub link');
                 window.open(downloadUrl, '_blank');
                 box.remove();
             });
@@ -74,6 +77,7 @@
             document.getElementById('remindLaterBtn').addEventListener('click', () => {
                 const snoozeUntil = Date.now() + REMIND_LATER_MS;
                 localStorage.setItem('checklist_remindLaterUntil', snoozeUntil.toString());
+                console.log('[Update] Reminder snoozed until', new Date(snoozeUntil).toLocaleString());
                 box.remove();
             });
         };
@@ -87,18 +91,24 @@
             return;
         }
 
+        // Check if user recently clicked update (within last 5 minutes)
+        const updateClickedTime = parseInt(localStorage.getItem('checklist_updateClickedTime') || '0', 10);
+        const timeSinceClick = Date.now() - updateClickedTime;
+        if (timeSinceClick < 5 * 60 * 1000 && timeSinceClick > 0) {
+            console.log('[Update] User clicked Update recently - suppressing notification');
+            localStorage.removeItem('checklist_updateClicked');
+            localStorage.removeItem('checklist_updateClickedTime');
+            return;
+        }
+
+        // Check if remind later is active
         const remindLaterUntil = parseInt(localStorage.getItem('checklist_remindLaterUntil') || '0', 10);
         if (Date.now() < remindLaterUntil) {
             console.log('[Update] Reminder snoozed until', new Date(remindLaterUntil).toLocaleString());
             return;
         }
 
-        const acknowledgedVersion = localStorage.getItem('checklist_lastVersionAcknowledged');
-        if (acknowledgedVersion && acknowledgedVersion === currentVersion) {
-            return;
-        }
-
-        console.log('[Update] Checking for updates...');
+        console.log('[Update] Checking for updates... (current version: ' + currentVersion + ')');
         GM_xmlhttpRequest({
             method: 'GET',
             url: versionUrl + '?t=' + Date.now(),
@@ -107,12 +117,13 @@
                     const match = response.responseText.match(/@version\s+([0-9.]+)/);
                     const latestVersion = match ? match[1] : null;
 
+                    console.log('[Update] GitHub version: ' + latestVersion);
+
                     if (latestVersion && latestVersion !== currentVersion) {
                         console.log(`[Update] New version ${latestVersion} detected (current: ${currentVersion})`);
                         showUpdatePopup(latestVersion);
                     } else {
                         console.log(`[Update] Up to date (current ${currentVersion})`);
-                        localStorage.removeItem('checklist_lastVersionAcknowledged');
                     }
                 } else {
                     console.log('[Update] HTTP error', response.status);
@@ -124,7 +135,10 @@
         });
     }
 
-    checkUpdate();
+    // Run check on script load
+    setTimeout(checkUpdate, 2000);
+    
+    // Then check periodically
     setInterval(checkUpdate, CHECK_INTERVAL);
 })();
 
