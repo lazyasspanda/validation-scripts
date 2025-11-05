@@ -11,6 +11,8 @@
 // @grant        GM_notification
 // @grant        GM_xmlhttpRequest
 // @grant        GM_openInTab
+// @updateURL    https://github.com/lazyasspanda/validation-scripts/raw/refs/heads/main/Salesforce%20Case%20Validation%20Checklist.user.js
+// @downloadURL  https://github.com/lazyasspanda/validation-scripts/raw/refs/heads/main/Salesforce%20Case%20Validation%20Checklist.user.js
 // @require      https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js
 // @icon         https://www.google.com/s2/favicons?domain=salesforce.com
 // @run-at       document-start
