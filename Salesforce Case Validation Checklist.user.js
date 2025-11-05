@@ -22,7 +22,7 @@
     'use strict';
 
 (function checkForScriptUpdates() {
-  const currentVersion = '7.1'; // update this when you push a new version
+  const currentVersion = '7.3'; // update this when you push a new version
   const versionUrl = 'https://raw.githubusercontent.com/lazyasspanda/validation-scripts/main/Salesforce%20Case%20Validation%20Checklist.user.js';
   const downloadUrl = versionUrl;
   const CHECK_INTERVAL = 30 * 1000; // 30 seconds
