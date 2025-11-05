@@ -21,11 +21,11 @@
 // ==/UserScript==
 
 (function checkForScriptUpdates() {
-    const currentVersion = '1.1';
+    const currentVersion = '7.4';
     const versionUrl = 'https://raw.githubusercontent.com/lazyasspanda/validation-scripts/main/Salesforce%20Case%20Validation%20Checklist.user.js';
     const downloadUrl = versionUrl;
-    const CHECK_INTERVAL = 30 * 1000;
-    const REMIND_LATER_MS = 2 * 60 * 60 * 1000;
+    const CHECK_INTERVAL = 30 * 1000; // Check every 30 seconds
+    const SUPPRESS_AFTER_UPDATE_MS = 10 * 60 * 1000; // Suppress for 10 minutes after clicking Update
 
     function showUpdatePopup(latestVersion) {
         const showPopup = () => {
@@ -42,42 +42,59 @@
                     position: fixed;
                     bottom: 20px;
                     right: 20px;
-                    background: #19325d;
+                    background: linear-gradient(135deg, #19325d 0%, #0e1d38 100%);
                     color: white;
-                    padding: 14px 18px;
-                    border-radius: 10px;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                    padding: 16px 20px;
+                    border-radius: 12px;
+                    box-shadow: 0 6px 20px rgba(0,0,0,0.4);
                     z-index: 999999;
                     font-family: 'Segoe UI', Arial, sans-serif;
-                    animation: fadeIn 0.3s ease-out;
-                    max-width: 280px;
+                    animation: slideUpFadeIn 0.4s ease-out;
+                    max-width: 300px;
+                    border: 2px solid #fb741c;
                 ">
-                    <div style="font-weight: 700; margin-bottom: 6px;">🚀 Update Available</div>
-                    <div style="font-size: 13px; margin-bottom: 10px;">New version <strong>${latestVersion}</strong> is available. You have <strong>${currentVersion}</strong>.</div>
-                    <div style="display: flex; gap: 8px; justify-content: flex-end;">
-                        <button id="updateNowBtn" style="background: #2ecc71; border: none; color: white; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">Update</button>
-                        <button id="remindLaterBtn" style="background: #fb741c; border: none; color: white; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">Later</button>
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                        <div style="font-size: 24px;">🚀</div>
+                        <div style="font-weight: 800; font-size: 15px;">Update Available</div>
                     </div>
+                    <div style="font-size: 13px; margin-bottom: 12px; line-height: 1.5;">
+                        New version <strong style="color: #fb741c;">${latestVersion}</strong> is available!<br>
+                        Current version: <strong>${currentVersion}</strong>
+                    </div>
+                    <button id="updateNowBtn" style="
+                        width: 100%;
+                        background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+                        border: none;
+                        color: white;
+                        padding: 10px 16px;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        font-size: 13px;
+                        font-weight: 700;
+                        text-transform: uppercase;
+                        letter-spacing: 0.5px;
+                        box-shadow: 0 3px 10px rgba(46, 204, 113, 0.4);
+                        transition: all 0.3s ease;
+                    ">Update Now</button>
                 </div>
                 <style>
-                    @keyframes fadeIn { from {opacity: 0; transform: translateY(10px);} to {opacity: 1; transform: translateY(0);} }
+                    @keyframes slideUpFadeIn { 
+                        from {opacity: 0; transform: translateY(20px);} 
+                        to {opacity: 1; transform: translateY(0);} 
+                    }
+                    #updateNowBtn:hover {
+                        transform: translateY(-2px);
+                        box-shadow: 0 5px 15px rgba(46, 204, 113, 0.6);
+                    }
                 </style>
             `;
             document.body.appendChild(box);
 
             document.getElementById('updateNowBtn').addEventListener('click', () => {
-                // Store ONLY the fact that user clicked update, not the version
-                localStorage.setItem('checklist_updateClicked', 'true');
-                localStorage.setItem('checklist_updateClickedTime', Date.now().toString());
+                // Store timestamp when user clicked Update
+                localStorage.setItem('checklist_lastUpdateClick', Date.now().toString());
                 console.log('[Update] User clicked Update - opening GitHub link');
                 window.open(downloadUrl, '_blank');
-                box.remove();
-            });
-
-            document.getElementById('remindLaterBtn').addEventListener('click', () => {
-                const snoozeUntil = Date.now() + REMIND_LATER_MS;
-                localStorage.setItem('checklist_remindLaterUntil', snoozeUntil.toString());
-                console.log('[Update] Reminder snoozed until', new Date(snoozeUntil).toLocaleString());
                 box.remove();
             });
         };
@@ -91,24 +108,21 @@
             return;
         }
 
-        // Check if user recently clicked update (within last 5 minutes)
-        const updateClickedTime = parseInt(localStorage.getItem('checklist_updateClickedTime') || '0', 10);
-        const timeSinceClick = Date.now() - updateClickedTime;
-        if (timeSinceClick < 5 * 60 * 1000 && timeSinceClick > 0) {
-            console.log('[Update] User clicked Update recently - suppressing notification');
-            localStorage.removeItem('checklist_updateClicked');
-            localStorage.removeItem('checklist_updateClickedTime');
+        // Check if user recently clicked Update button
+        const lastUpdateClick = parseInt(localStorage.getItem('checklist_lastUpdateClick') || '0', 10);
+        const timeSinceClick = Date.now() - lastUpdateClick;
+        
+        if (timeSinceClick < SUPPRESS_AFTER_UPDATE_MS && timeSinceClick > 0) {
+            console.log('[Update] Recently clicked Update - suppressing check for', Math.floor((SUPPRESS_AFTER_UPDATE_MS - timeSinceClick) / 1000), 'more seconds');
             return;
         }
 
-        // Check if remind later is active
-        const remindLaterUntil = parseInt(localStorage.getItem('checklist_remindLaterUntil') || '0', 10);
-        if (Date.now() < remindLaterUntil) {
-            console.log('[Update] Reminder snoozed until', new Date(remindLaterUntil).toLocaleString());
-            return;
+        // If suppression period passed, clear the timestamp
+        if (lastUpdateClick > 0 && timeSinceClick >= SUPPRESS_AFTER_UPDATE_MS) {
+            localStorage.removeItem('checklist_lastUpdateClick');
         }
 
-        console.log('[Update] Checking for updates... (current version: ' + currentVersion + ')');
+        console.log('[Update] Checking for updates... (current: ' + currentVersion + ')');
         GM_xmlhttpRequest({
             method: 'GET',
             url: versionUrl + '?t=' + Date.now(),
@@ -120,22 +134,22 @@
                     console.log('[Update] GitHub version: ' + latestVersion);
 
                     if (latestVersion && latestVersion !== currentVersion) {
-                        console.log(`[Update] New version ${latestVersion} detected (current: ${currentVersion})`);
+                        console.log(`[Update] ⚠️ New version ${latestVersion} available (current: ${currentVersion})`);
                         showUpdatePopup(latestVersion);
                     } else {
-                        console.log(`[Update] Up to date (current ${currentVersion})`);
+                        console.log(`[Update] ✓ Up to date (${currentVersion})`);
                     }
                 } else {
                     console.log('[Update] HTTP error', response.status);
                 }
             },
             onerror: function (err) {
-                console.log('[Update] Error checking for update:', err);
+                console.log('[Update] Network error:', err);
             }
         });
     }
 
-    // Run check on script load
+    // Initial check after 2 seconds
     setTimeout(checkUpdate, 2000);
     
     // Then check periodically
@@ -157,7 +171,7 @@
         return;
     }
 
-    console.log('[*] Validation Checklist Script Loaded in main window');
+    console.log('[*] Validation Checklist v7.4 Loaded');
 
     let currentURL = window.location.href;
     let checklistInitialized = false;
@@ -251,7 +265,7 @@
             <button id="closeDrawer" style="position: absolute; top: 8px; right: 12px; background: ${colors.white}; border: none; width: 28px; height: 28px; border-radius: 50%; font-size: 18px; cursor: pointer; color: ${colors.brand}; font-weight: bold; transition: all 0.3s ease; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2); display: flex; align-items: center; justify-content: center; z-index: 10;">&#10005;</button>
             <div style="text-align: center; margin-bottom: 12px;">
                 <h2 style="margin: 0 0 3px 0; font-size: 18px; font-weight: 800; color: ${colors.white}; letter-spacing: -0.3px;">Validation Hub</h2>
-                <p style="margin: 0; font-size: 11px; color: rgba(255,255,255,0.9); font-weight: 500;">Cloud Enabled</p>
+                <p style="margin: 0; font-size: 11px; color: rgba(255,255,255,0.9); font-weight: 500;">Cloud Enabled v7.4</p>
             </div>
             <div style="display: flex; gap: 0; background: ${colors.brandDark}; border-radius: 6px 6px 0 0; overflow: hidden;">
                 <button id="tabChecklist" class="tab-btn" style="flex: 1; padding: 12px; background: ${colors.white}; border: none; color: ${colors.brand}; font-weight: 700; font-size: 12px; cursor: pointer; transition: all 0.3s ease;">Checklist</button>
