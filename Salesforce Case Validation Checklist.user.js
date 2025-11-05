@@ -18,8 +18,6 @@
 // @icon         https://www.google.com/s2/favicons?domain=salesforce.com
 // @run-at       document-start
 // ==/UserScript==
-(function() {
-    'use strict';
 
 (function checkForScriptUpdates() {
   const currentVersion = '7.3'; // update this when you push a new version
